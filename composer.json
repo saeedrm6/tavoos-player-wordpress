@@ -1,0 +1,16 @@
+{
+    "name": "lazy/plugin",
+    "type": "project",
+    "license": "GPL",
+    "authors": [
+        {
+            "name": "Tavoos AdNetwork",
+            "email": "info@tavoos.net"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {"Inc\\": "./inc"}
+    }
+}
