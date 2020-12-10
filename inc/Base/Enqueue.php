@@ -25,6 +25,10 @@ class Enqueue
 
     public function userScripts()
     {
+        wp_deregister_script('wp-mediaelement');
+
+        wp_deregister_style('wp-mediaelement');
+
         if (have_posts()) :
 
             while (have_posts()) : the_post();
@@ -48,42 +52,77 @@ class Enqueue
 
     public function filter_content($content)
     {
-        preg_match_all("'<video (.*?)>(.*?)</video>'si", $content, $videos);
-
         $vast = get_option('tavoos_player_vast');
 
-        if (count($videos[0]) > 0) {
-            $thumbnail = (get_the_post_thumbnail_url() != false) ? get_the_post_thumbnail_url() : '';
+        $thumbnail = (get_the_post_thumbnail_url() != false) ? get_the_post_thumbnail_url() : '';
 
-            foreach ($videos[0] as $key => $video) {
-                preg_match("'src=\"(.*?)\"'si", $video, $src);
+        preg_match_all("'\\[video (.*?)\\]\\[\\/video]'si", $content, $mediaElement);
 
-                $id = 'player-' . str_shuffle('01234CDEFGHIQRSTUVWXYZ');
+        if (count($mediaElement[0]) > 0) {
+            foreach ($mediaElement[1] as $key => $video) {
+                preg_match('#\bhttps?://[^,\s()<>]+(?:\([\w\d]+\)|([^,[:punct:]\s]|/))#', $video, $src);
 
-                $format = str_replace("?_=1", "", pathinfo($src[1])['extension']);
+                $id = 'player-tavoos-' . rand(0, 1000);
+
+                $format = str_replace("?_=1", "", pathinfo($src[0])['extension']);
 
                 $el = '<div id="' . $id . '"></div>';
 
                 $label = '{';
 
-                $label .= '"file"	: "' . $src[1] . '",';
+                $label .= '"file"    : "' . $src[0] . '",';
 
-                $label .= '"type"	: "' . $format . '",';
+                $label .= '"type"    : "' . $format . '",';
 
-                $label .= '"label"	: "720"';
+                $label .= '"label"   : "720"';
 
                 $label .= '}';
 
                 $el .= '<script>
-		        tavoos_init_player(
-		        	"' . $id . '",
-		        	"' . $thumbnail . '",
-			        [' . $label . '],
-			        "' . $vast . '"
-		        )
-		        </script>';
+                tavoos_init_player(
+                 "' . $id . '",
+                 "' . $thumbnail . '",
+                    [' . $label . '],
+                    "' . $vast . '"
+                )
+                </script>';
 
-                $content = str_replace($video, $el, $content);
+                $content = str_replace($mediaElement[0][$key], $el, $content);
+            }
+        } else {
+            preg_match_all("'<video (.*?)>(.*?)</video>'si", $content, $videos);
+
+            if (count($videos[0]) > 0) {
+                foreach ($videos[0] as $key => $video) {
+                    preg_match('#\bhttps?://[^,\s()<>]+(?:\([\w\d]+\)|([^,[:punct:]\s]|/))#', $video, $src);
+
+                    $id = 'player-tavoos-' . rand(0, 1000);
+
+                    $format = str_replace("?_=1", "", pathinfo($src[0])['extension']);
+
+                    $el = '<div id="' . $id . '"></div>';
+
+                    $label = '{';
+
+                    $label .= '"file"   : "' . $src[0] . '",';
+
+                    $label .= '"type"   : "' . $format . '",';
+
+                    $label .= '"label"  : "720"';
+
+                    $label .= '}';
+
+                    $el .= '<script>
+                    tavoos_init_player(
+                        "' . $id . '",
+                        "' . $thumbnail . '",
+                        [' . $label . '],
+                        "' . $vast . '"
+                    )
+                    </script>';
+
+                    $content = str_replace($video, $el, $content);
+                }
             }
         }
 

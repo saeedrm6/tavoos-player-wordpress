@@ -38,6 +38,7 @@ register_deactivation_hook( __FILE__, function()
 
 if( class_exists( 'Inc\\Init' ) )
 {
+
 	add_action( 'init', function()
 	{
 		Inc\Init::register_services();
